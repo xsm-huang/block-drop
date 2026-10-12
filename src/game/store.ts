@@ -85,7 +85,13 @@ export class GameStore {
     if (sync) this.syncTime();
     this.stopClock(); this.feedback.stop(); this.dispatch({ type: 'pause' });
   }
-  setVisible(value: boolean) { if (!value) this.pause(); this.visible = value; }
+  setVisible(value: boolean) {
+    if (!value) this.pause();
+    this.visible = value;
+    // Entering from the homepage is already an explicit start/continue action.
+    // Background activation only calls setForeground, so it remains paused.
+    if (value && this.snapshot.profile.tutorial && !this.snapshot.error) this.resume();
+  }
   setForeground(value: boolean) { if (!value) this.pause(); this.foreground = value; }
   async startNew() {
     if (this.snapshot.loading || this.snapshot.fatal) return false;
@@ -94,7 +100,9 @@ export class GameStore {
     const seed = (Date.now() ^ Math.floor(Math.random() * 0xffffffff)) >>> 0;
     this.game = newGame(seed, `${Date.now()}-${seed}`, this.snapshot.profile.best);
     this.publish({ notice: null });
-    return this.save();
+    const saved = await this.save();
+    if (saved && this.visible && this.snapshot.profile.tutorial) this.resume();
+    return saved;
   }
   async setPreference(key: 'sound' | 'haptics', value: boolean) {
     this.feedback.stop(); this.publish({ profile: { ...this.snapshot.profile, [key]: value } });

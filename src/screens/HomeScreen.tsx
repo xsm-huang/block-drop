@@ -9,20 +9,18 @@ import { blockColors, palette } from '../theme';
 export default function HomeScreen() {
   const app = useSyncExternalStore(gameStore.subscribe, gameStore.getSnapshot);
   const [settings, setSettings] = useState(false);
-  const [confirm, setConfirm] = useState(false);
   const [busy, setBusy] = useState(false);
   const hasGame = !!app.game && app.game.phase !== 'gameOver';
   const start = async () => {
     if (busy) return;
-    setBusy(true); setConfirm(false);
+    setBusy(true);
     try { if (await gameStore.startNew()) router.push('/game'); } finally { setBusy(false); }
   };
   return <SafeAreaView style={styles.screen}>
-    <View style={local.top}><Text style={styles.label}>离线 · 休闲</Text><Button title="设置" secondary onPress={() => setSettings(true)} /></View>
+    <View style={local.top}><Button title="设置" secondary onPress={() => setSettings(true)} /></View>
     <View style={local.hero}>
       <View style={local.mark}>{[0,1,2,4].map(n => <View key={n} style={[local.tile, { left: n % 3 * 25, top: Math.floor(n / 3) * 25 }]} />)}</View>
-      <Text style={local.title}>BLOCK{ '\n' }DROP<Text style={{ color: palette.accent }}>.</Text></Text>
-      <Text style={styles.body}>轻松落下，慢慢玩。</Text>
+      <Text style={local.title}>俄罗斯方块<Text style={{ color: palette.accent }}></Text></Text>
       <View style={local.record}><Text style={styles.label}>历史最高分</Text><Text style={local.number}>{app.profile.best.toLocaleString()}</Text></View>
     </View>
     <View style={local.actions}>
@@ -31,11 +29,10 @@ export default function HomeScreen() {
         : <>
           {hasGame && <Button title="继续游戏" disabled={busy} onPress={() => router.push('/game')} />}
           <Button title={busy ? '正在准备…' : hasGame ? '新游戏' : '开始游戏'} secondary={hasGame} disabled={busy}
-            onPress={() => { if (hasGame) setConfirm(true); else void start(); }} />
+            onPress={() => { void start(); }} />
         </>}
       {app.error && <><Text style={styles.error}>{app.error}</Text>{!app.fatal && <Button secondary title="重试保存" onPress={() => { void gameStore.save(); }} />}</>}
       {app.notice && <Text onPress={() => gameStore.dismissNotice()} style={styles.body}>{app.notice}</Text>}
-      <Text style={local.footer}>无需联网，无需赶时间</Text>
     </View>
     <Dialog visible={settings} title="设置" onBack={() => setSettings(false)}>
       {(['sound', 'haptics'] as const).map(key => <View key={key} style={local.setting}>
@@ -46,15 +43,10 @@ export default function HomeScreen() {
       {app.error && <><Text style={styles.error}>{app.error}</Text><Button title="重试保存" onPress={() => { void gameStore.save(); }} /></>}
       <Button title="完成" onPress={() => setSettings(false)} />
     </Dialog>
-    <Dialog visible={confirm} title="开始新游戏？" onBack={() => setConfirm(false)}>
-      <Text style={styles.body}>开始新游戏将覆盖当前进度，历史最高分会保留。</Text>
-      <Button title="开始新游戏" onPress={() => { void start(); }} disabled={busy} />
-      <Button title="取消" secondary onPress={() => setConfirm(false)} />
-    </Dialog>
   </SafeAreaView>;
 }
 const local = StyleSheet.create({
-  top: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingTop: 8 },
+  top: { flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', paddingTop: 8 },
   hero: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: 16 },
   mark: { width: 73, height: 48, marginBottom: 8 },
   tile: { position: 'absolute', width: 23, height: 23, borderRadius: 3, backgroundColor: blockColors.T },

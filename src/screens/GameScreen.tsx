@@ -54,7 +54,6 @@ export default function GameScreen() {
         <Text style={styles.body}>{game.score > game.bestAtStart ? '新纪录！ ' : ''}历史最高：{app.profile.best.toLocaleString()}</Text>
         <Button title="再来一局" disabled={busy} onPress={() => { void restart(); }} />
       </> : <>
-        <Text style={styles.body}>不用着急，准备好了再继续。</Text>
         <Button title={game.phase === 'ready' ? '开始游戏' : '继续游戏'} disabled={busy} onPress={() => gameStore.resume()} />
       </>}
       {app.error && <><Text style={styles.error}>{app.error}</Text><Button title="重试保存" disabled={busy} onPress={() => { void gameStore.save(); }} /></>}

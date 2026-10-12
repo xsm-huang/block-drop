@@ -79,10 +79,10 @@ test('corrupt game is removed without losing valid profile', async () => {
   lastDatabase.native.close();
 });
 
-function fakeStore(game = null) {
+function fakeStore(game = null, profile = { ...defaultProfile, best: 90 }) {
   let fail = false;
   const writes = [];
-  const storage = { queue: new SaveQueue(), load: async () => ({ game, profile: { ...defaultProfile, best: 90 }, corrupt: false }),
+  const storage = { queue: new SaveQueue(), load: async () => ({ game, profile, corrupt: false }),
     save: async (g, p) => { if (fail) throw new Error('write failure'); writes.push({ game: g, profile: p }); } };
   const feedback = { init() {}, play() {}, stop() {}, dispose() {} };
   return { store: new GameStore(storage, feedback), writes, setFailure(value) { fail = value; } };
@@ -125,4 +125,29 @@ test('async initialization discarded after disposal cannot resurrect old state',
   const loading = store.init(); store.dispose();
   resolve({ game: newGame(1, 'stale'), profile: defaultProfile, corrupt: false }); await loading;
   assert.equal(store.getSnapshot().game, null);
+});
+
+test('homepage start and continue require no second confirmation after tutorial', async () => {
+  const { store } = fakeStore(null, { ...defaultProfile, tutorial: true });
+  await store.init(); await store.startNew();
+  assert.equal(store.getSnapshot().game.phase, 'ready');
+  store.setVisible(true);
+  assert.equal(store.getSnapshot().game.phase, 'running');
+  store.setVisible(false);
+  assert.equal(store.getSnapshot().game.phase, 'paused');
+  store.setVisible(true);
+  assert.equal(store.getSnapshot().game.phase, 'running');
+  store.setForeground(false); store.setForeground(true);
+  assert.equal(store.getSnapshot().game.phase, 'paused');
+  store.dispose();
+});
+
+test('first tutorial remains and new in-page sessions start after successful save', async () => {
+  const { store } = fakeStore(); await store.init(); await store.startNew(); store.setVisible(true);
+  assert.equal(store.getSnapshot().game.phase, 'ready');
+  await store.finishTutorial();
+  assert.equal(store.getSnapshot().game.phase, 'running');
+  await store.startNew();
+  assert.equal(store.getSnapshot().game.phase, 'running');
+  store.dispose();
 });
