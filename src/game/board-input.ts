@@ -9,11 +9,11 @@ export class BoardInput {
   private binding: { sessionId: string; pieceId: number } | null = null;
   readonly gesture: Gesture;
   readonly responder: ReturnType<typeof PanResponder.create>;
-  constructor(size: number) {
+  constructor(size: number, rowSize: number) {
     this.gesture = new Gesture(size, action => {
       if (!this.binding || gameStore.getSnapshot().game?.phase !== 'running') return false;
       return gameStore.input(action, this.binding.sessionId, this.binding.pieceId);
-    });
+    }, rowSize);
     this.responder = PanResponder.create({
       onStartShouldSetPanResponder: () => gameStore.getSnapshot().game?.phase === 'running',
       onPanResponderGrant: e => {

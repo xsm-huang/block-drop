@@ -7,7 +7,7 @@ export class Gesture {
   private samples: Sample[] = [];
   private mode: 'pending' | 'horizontal' | 'vertical' | 'ignored' | 'consumed' = 'consumed';
   private carry = 0;
-  constructor(private cell: number, private emit: (action: Action) => boolean) {}
+  constructor(private cell: number, private emit: (action: Action) => boolean, private rowSize = cell) {}
   start(sample: Sample) {
     this.origin = sample; this.last = sample; this.samples = [sample]; this.mode = 'pending'; this.carry = 0;
   }
@@ -23,7 +23,7 @@ export class Gesture {
     }
     const first = this.samples[0];
     const velocity = (sample.y - first.y) / Math.max(1, sample.time - first.time) * 1000;
-    if (this.mode === 'vertical' && dy >= Math.max(24, this.cell) && velocity >= 900) {
+    if (this.mode === 'vertical' && dy >= Math.max(24, this.rowSize) && velocity >= 900) {
       this.emit('hard'); this.cancel(); return;
     }
     if (this.mode === 'horizontal') {
@@ -36,9 +36,9 @@ export class Gesture {
     } else if (this.mode === 'vertical') {
       const delta = sample.y - this.last.y;
       this.carry = delta < 0 ? 0 : this.carry + delta;
-      while (this.carry >= this.cell) {
+      while (this.carry >= this.rowSize) {
         if (!this.emit('soft')) { this.carry = 0; break; }
-        this.carry -= this.cell;
+        this.carry -= this.rowSize;
       }
     }
     // Keep the initial anchor until the direction has been decided.

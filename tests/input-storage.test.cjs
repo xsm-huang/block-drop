@@ -43,6 +43,14 @@ test('blocked drag does not accumulate a debt before reversing', () => {
   g.start(sample(0,0,0)); g.move(sample(-300,0,200)); g.move(sample(-270,0,300));
   assert.deepEqual(actions, ['left','right']);
 });
+test('full-width short boards use row height for vertical gestures and column width for horizontal gestures', () => {
+  const actions = [];
+  const gesture = new Gesture(40, action => { actions.push(action); return true; }, 25);
+  gesture.start(sample(0,0,0)); gesture.move(sample(0,50,500)); gesture.end(sample(0,50,550));
+  assert.deepEqual(actions, ['soft','soft']);
+  gesture.start(sample(0,0,600)); gesture.move(sample(80,0,1000));
+  assert.deepEqual(actions, ['soft','soft','right','right']);
+});
 test('save roundtrip freezes game and preserves random sequence, scores and timers', () => {
   let g = transition(newGame(42, 'saved'), { type: 'resume' }).state;
   g = transition(g, { type: 'tick', ms: 123 }).state;
